@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: "Password123!"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+
+  api:
+    build:
+      context: .
+      dockerfile: WhatsappSaaS.API/Dockerfile
+    ports:
+      - "5000:80"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db;Database=WhatsappSaaS;User Id=sa;Password=Password123!;TrustServerCertificate=True
+      - Jwt__Key=ThisIsAVerySecretKeyForMySaaSApplication123!
+      - Jwt__Issuer=WhatsappSaaS
+      - Jwt__Audience=WhatsappSaaS
+    depends_on:
+      - db
+
+  web:
+    build:
+      context: .
+      dockerfile: WhatsappSaaS.Web/Dockerfile
+    ports:
+      - "5001:80"
+    depends_on:
+      - api

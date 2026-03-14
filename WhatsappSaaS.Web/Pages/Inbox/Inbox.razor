@@ -1,0 +1,138 @@
+@page "/inbox"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NavigationManager
+
+<div class="container-fluid h-100">
+    <div class="row h-100">
+        <!-- Sidebar: Contact List -->
+        <div class="col-md-3 border-end p-0">
+            <div class="p-3 bg-light border-bottom">
+                <h5>Contacts</h5>
+            </div>
+            <div class="list-group list-group-flush overflow-auto" style="max-height: 80vh;">
+                @foreach (var contact in _contacts)
+                {
+                    <button class="list-group-item list-group-item-action @(contact.Id == _selectedContactId ? "active" : "")" 
+                            @onclick="() => SelectContact(contact.Id)">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">@contact.Name</h6>
+                            <small>@contact.LastMessageTime</small>
+                        </div>
+                        <p class="mb-1 text-truncate">@contact.LastMessage</p>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- Main Content: Chat Window -->
+        <div class="col-md-6 d-flex flex-column p-0">
+            <div class="p-3 bg-light border-bottom">
+                <h5>@(_selectedContactName ?? "Select a contact")</h5>
+            </div>
+            <div class="flex-grow-1 p-3 overflow-auto" style="max-height: 70vh;">
+                @foreach (var msg in _messages)
+                {
+                    <div class="d-flex @(msg.IsFromContact ? "justify-content-start" : "justify-content-end") mb-2">
+                        <div class="p-2 rounded @(msg.IsFromContact ? "bg-secondary text-white" : "bg-primary text-white")" style="max-width: 70%;">
+                            @msg.Content
+                            <div class="text-end" style="font-size: 0.7rem;">@msg.SentAt.ToString("HH:mm")</div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="p-3 border-top">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Type a message..." @bind="_newMessage" @onkeyup="HandleKeyUp" />
+                    <button class="btn btn-primary" @onclick="SendMessage">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar: Contact Details -->
+        <div class="col-md-3 border-start p-3 bg-light">
+            <h5>Contact Details</h5>
+            <hr />
+            @if (_selectedContactId != Guid.Empty)
+            {
+                <p><strong>Name:</strong> @_selectedContactName</p>
+                <p><strong>Phone:</strong> @_selectedContactPhone</p>
+                <p><strong>Status:</strong> <span class="badge bg-success">Active</span></p>
+                <hr />
+                <h6>Tags</h6>
+                <div class="mb-3">
+                    <span class="badge bg-info text-dark">Lead</span>
+                    <span class="badge bg-warning text-dark">Pending</span>
+                </div>
+                <h6>Notes</h6>
+                <textarea class="form-control mb-3" rows="3"></textarea>
+                <button class="btn btn-sm btn-outline-primary">Save Notes</button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<ContactDto> _contacts = new();
+    private List<MessageDto> _messages = new();
+    private Guid _selectedContactId;
+    private string? _selectedContactName;
+    private string? _selectedContactPhone;
+    private string _newMessage = "";
+    private HubConnection? _hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Mock data for MVP
+        _contacts = new List<ContactDto>
+        {
+            new() { Id = Guid.NewGuid(), Name = "John Doe", LastMessage = "Hello!", LastMessageTime = "10:30" },
+            new() { Id = Guid.NewGuid(), Name = "Jane Smith", LastMessage = "Is this available?", LastMessageTime = "09:15" }
+        };
+
+        // SignalR setup
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/chathub"))
+            .Build();
+
+        _hubConnection.On<string>("ReceiveMessage", (message) =>
+        {
+            _messages.Add(new MessageDto { Content = message, IsFromContact = true, SentAt = DateTime.Now });
+            StateHasChanged();
+        });
+
+        await _hubConnection.StartAsync();
+    }
+
+    private void SelectContact(Guid id)
+    {
+        _selectedContactId = id;
+        var contact = _contacts.First(c => c.Id == id);
+        _selectedContactName = contact.Name;
+        _selectedContactPhone = "+55 11 99999-9999";
+        
+        // Mock messages
+        _messages = new List<MessageDto>
+        {
+            new() { Content = "Hi, I'm interested in your product.", IsFromContact = true, SentAt = DateTime.Now.AddMinutes(-10) },
+            new() { Content = "Sure, how can I help you?", IsFromContact = false, SentAt = DateTime.Now.AddMinutes(-5) }
+        };
+    }
+
+    private async Task SendMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(_newMessage))
+        {
+            _messages.Add(new MessageDto { Content = _newMessage, IsFromContact = false, SentAt = DateTime.Now });
+            _newMessage = "";
+            // In a real app, call the API and SignalR hub
+        }
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SendMessage();
+    }
+
+    public class ContactDto { public Guid Id { get; set; } public string Name { get; set; } = ""; public string LastMessage { get; set; } = ""; public string LastMessageTime { get; set; } = ""; }
+    public class MessageDto { public string Content { get; set; } = ""; public bool IsFromContact { get; set; } public DateTime SentAt { get; set; } }
+}
