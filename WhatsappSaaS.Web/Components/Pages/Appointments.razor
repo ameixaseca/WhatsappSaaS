@@ -1,0 +1,190 @@
+@page "/appointments"
+@inject AuthStateService AuthStateService
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<PageTitle>Agendamentos - WhatsApp SaaS</PageTitle>
+
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-calendar-check me-2 text-info"></i>Agendamentos</h5>
+        <button class="btn btn-info btn-sm text-white" @onclick="ShowCreateModal">
+            <i class="bi bi-calendar-plus me-1"></i>Novo Agendamento
+        </button>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="text-center py-5"><div class="spinner-border text-info"></div></div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                @if (!_appointments.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-calendar-x fs-1 opacity-50"></i>
+                        <p class="mt-3">Nenhum agendamento registrado</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Contato</th>
+                                    <th>Data/Hora</th>
+                                    <th>Tipo</th>
+                                    <th>Observações</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var apt in _appointments.OrderBy(a => a.AppointmentDate))
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@apt.ContactName</td>
+                                        <td>@apt.AppointmentDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>
+                                            @{
+                                                var (typeBadge, typeLabel) = apt.Type switch
+                                                {
+                                                    "Support" => ("bg-warning text-dark", "Suporte"),
+                                                    "Sales" => ("bg-success", "Vendas"),
+                                                    _ => ("bg-secondary", "Outro")
+                                                };
+                                            }
+                                            <span class="badge @typeBadge">@typeLabel</span>
+                                        </td>
+                                        <td class="text-muted small">@apt.Notes</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAppointment(apt.Id)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@if (_showModal)
+{
+    <div class="modal show d-block" style="background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Novo Agendamento</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Contato *</label>
+                        <select class="form-select" @bind="_formContactId">
+                            <option value="">Selecione um contato</option>
+                            @foreach (var c in _contacts)
+                            {
+                                <option value="@c.Id">@c.Name - @c.PhoneNumber</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Data e Hora *</label>
+                        <input type="datetime-local" class="form-control" @bind="_formDate" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-select" @bind="_formType">
+                            <option value="Support">Suporte</option>
+                            <option value="Sales">Vendas</option>
+                            <option value="Other">Outro</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-control" @bind="_formNotes" rows="2"></textarea>
+                    </div>
+                    @if (!string.IsNullOrEmpty(_formError)) { <div class="alert alert-danger py-2">@_formError</div> }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseModal">Cancelar</button>
+                    <button class="btn btn-info text-white" @onclick="SaveAppointment" disabled="@_isSaving">
+                        @if (_isSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<AppointmentDto> _appointments = new();
+    private List<ContactDto> _contacts = new();
+    private bool _isLoading = true;
+    private bool _showModal;
+    private bool _isSaving;
+    private string _formContactId = "";
+    private DateTime _formDate = DateTime.Now.AddDays(1);
+    private string _formType = "Support";
+    private string _formNotes = "";
+    private string? _formError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthStateService.IsAuthenticated) { NavigationManager.NavigateTo("/login"); return; }
+        Http.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", AuthStateService.Token);
+        await Task.WhenAll(LoadAppointments(), LoadContacts());
+    }
+
+    private async Task LoadAppointments()
+    {
+        _isLoading = true;
+        try { _appointments = await Http.GetFromJsonAsync<List<AppointmentDto>>("api/appointments") ?? new(); }
+        catch { }
+        _isLoading = false;
+    }
+
+    private async Task LoadContacts()
+    {
+        try { _contacts = await Http.GetFromJsonAsync<List<ContactDto>>("api/contacts") ?? new(); }
+        catch { }
+    }
+
+    private void ShowCreateModal() { _formContactId = ""; _formDate = DateTime.Now.AddDays(1); _formType = "Support"; _formNotes = ""; _formError = null; _showModal = true; }
+    private void CloseModal() => _showModal = false;
+
+    private async Task SaveAppointment()
+    {
+        if (string.IsNullOrWhiteSpace(_formContactId)) { _formError = "Selecione um contato."; return; }
+        _isSaving = true; _formError = null;
+        try
+        {
+            var resp = await Http.PostAsJsonAsync("api/appointments", new CreateAppointmentRequest
+            {
+                ContactId = Guid.Parse(_formContactId),
+                AppointmentDate = _formDate,
+                Type = _formType,
+                Notes = _formNotes
+            });
+            if (resp.IsSuccessStatusCode) { _showModal = false; await LoadAppointments(); }
+            else _formError = "Erro ao criar agendamento.";
+        }
+        catch { _formError = "Erro de comunicação."; }
+        _isSaving = false;
+    }
+
+    private async Task DeleteAppointment(Guid id)
+    {
+        try { await Http.DeleteAsync($"api/appointments/{id}"); await LoadAppointments(); }
+        catch { }
+    }
+}

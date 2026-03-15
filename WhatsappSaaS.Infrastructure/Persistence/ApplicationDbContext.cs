@@ -27,6 +27,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ChatbotFlow> ChatbotFlows { get; set; }
     public DbSet<FlowStep> FlowSteps { get; set; }
     public DbSet<Appointment> Appointments { get; set; }
+    public DbSet<QuickResponse> QuickResponses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -41,6 +42,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<ChatbotFlow>().HasQueryFilter(e => e.CompanyId == _tenantService.CompanyId);
         modelBuilder.Entity<FlowStep>().HasQueryFilter(e => e.CompanyId == _tenantService.CompanyId);
         modelBuilder.Entity<Appointment>().HasQueryFilter(e => e.CompanyId == _tenantService.CompanyId);
+        modelBuilder.Entity<QuickResponse>().HasQueryFilter(e => e.CompanyId == _tenantService.CompanyId);
 
         // Configure relationships
         modelBuilder.Entity<Company>()

@@ -1,0 +1,204 @@
+@page "/admin"
+@inject AuthStateService AuthStateService
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<PageTitle>Administração - WhatsApp SaaS</PageTitle>
+
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-gear me-2 text-secondary"></i>Administração do SaaS</h5>
+    </div>
+
+    <div class="row g-3">
+        <!-- Companies -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-buildings me-2"></i>Empresas</h6>
+                    <button class="btn btn-primary btn-sm" @onclick="ShowCreateCompanyModal">
+                        <i class="bi bi-plus me-1"></i>Nova Empresa
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    @if (_isLoadingCompanies)
+                    {
+                        <div class="text-center p-4"><div class="spinner-border spinner-border-sm"></div></div>
+                    }
+                    else if (!_companies.Any())
+                    {
+                        <div class="text-center p-4 text-muted">Nenhuma empresa cadastrada</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr><th>Empresa</th><th>CNPJ</th><th>Plano</th><th>Status</th><th>Criada em</th></tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var company in _companies)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">@company.Name</td>
+                                            <td class="text-muted small">@company.Cnpj</td>
+                                            <td><span class="badge bg-info">@company.PlanName</span></td>
+                                            <td>
+                                                <span class="badge @(company.IsActive ? "bg-success" : "bg-danger")">
+                                                    @(company.IsActive ? "Ativa" : "Inativa")
+                                                </span>
+                                            </td>
+                                            <td class="text-muted small">@company.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Plans -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 py-3">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-card-list me-2"></i>Planos</h6>
+                </div>
+                <div class="card-body p-0">
+                    @if (_plans.Any())
+                    {
+                        @foreach (var plan in _plans)
+                        {
+                            <div class="p-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong>@plan.Name</strong>
+                                    <span class="badge bg-success">R$ @plan.Price.ToString("N2")/mês</span>
+                                </div>
+                                <div class="text-muted small mt-1">
+                                    <i class="bi bi-people me-1"></i>@plan.MaxUsers usuários
+                                    &nbsp;|&nbsp;
+                                    <i class="bi bi-chat-dots me-1"></i>@plan.MaxMessages msg/mês
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- System Info -->
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-header bg-transparent border-0 py-3">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2"></i>Informações do Sistema</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-muted small">
+                        <div class="mb-2"><i class="bi bi-person-circle me-2"></i><strong>Usuário:</strong> @AuthStateService.UserName</div>
+                        <div class="mb-2"><i class="bi bi-envelope me-2"></i><strong>Email:</strong> @AuthStateService.UserEmail</div>
+                        <div class="mb-2"><i class="bi bi-shield me-2"></i><strong>Perfil:</strong> @AuthStateService.Role</div>
+                        <div><i class="bi bi-building me-2"></i><strong>Empresa ID:</strong> <span class="font-monospace" style="font-size: 0.7rem;">@AuthStateService.CompanyId</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_showCompanyModal)
+{
+    <div class="modal show d-block" style="background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nova Empresa</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nome *</label>
+                        <input class="form-control" @bind="_formCompanyName" placeholder="Nome da empresa" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">CNPJ</label>
+                        <input class="form-control" @bind="_formCompanyCnpj" placeholder="00.000.000/0001-00" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Plano *</label>
+                        <select class="form-select" @bind="_formCompanyPlanId">
+                            <option value="">Selecione um plano</option>
+                            @foreach (var plan in _plans)
+                            {
+                                <option value="@plan.Id">@plan.Name - R$ @plan.Price.ToString("N2")/mês</option>
+                            }
+                        </select>
+                    </div>
+                    @if (!string.IsNullOrEmpty(_formError)) { <div class="alert alert-danger py-2">@_formError</div> }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseModal">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="SaveCompany" disabled="@_isSaving">
+                        @if (_isSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<CompanyDto> _companies = new();
+    private List<PlanDto> _plans = new();
+    private bool _isLoadingCompanies = true;
+    private bool _showCompanyModal;
+    private bool _isSaving;
+    private string _formCompanyName = "";
+    private string _formCompanyCnpj = "";
+    private string _formCompanyPlanId = "";
+    private string? _formError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthStateService.IsAuthenticated) { NavigationManager.NavigateTo("/login"); return; }
+        Http.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", AuthStateService.Token);
+        await Task.WhenAll(LoadCompanies(), LoadPlans());
+    }
+
+    private async Task LoadCompanies()
+    {
+        _isLoadingCompanies = true;
+        try { _companies = await Http.GetFromJsonAsync<List<CompanyDto>>("api/companies") ?? new(); }
+        catch { }
+        _isLoadingCompanies = false;
+    }
+
+    private async Task LoadPlans()
+    {
+        try { _plans = await Http.GetFromJsonAsync<List<PlanDto>>("api/companies/plans") ?? new(); }
+        catch { }
+    }
+
+    private void ShowCreateCompanyModal() { _formCompanyName = _formCompanyCnpj = _formCompanyPlanId = ""; _formError = null; _showCompanyModal = true; }
+    private void CloseModal() => _showCompanyModal = false;
+
+    private async Task SaveCompany()
+    {
+        if (string.IsNullOrWhiteSpace(_formCompanyName) || string.IsNullOrWhiteSpace(_formCompanyPlanId))
+        { _formError = "Nome e plano são obrigatórios."; return; }
+        _isSaving = true; _formError = null;
+        try
+        {
+            var resp = await Http.PostAsJsonAsync("api/companies", new CreateCompanyRequest
+            {
+                Name = _formCompanyName,
+                Cnpj = _formCompanyCnpj,
+                PlanId = Guid.Parse(_formCompanyPlanId)
+            });
+            if (resp.IsSuccessStatusCode) { _showCompanyModal = false; await LoadCompanies(); }
+            else _formError = "Erro ao criar empresa.";
+        }
+        catch { _formError = "Erro de comunicação."; }
+        _isSaving = false;
+    }
+}

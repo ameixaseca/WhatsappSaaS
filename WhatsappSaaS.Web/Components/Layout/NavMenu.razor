@@ -1,6 +1,8 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+<div class="top-row ps-3 navbar navbar-dark bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">WhatsappSaaS.Web</a>
+        <a class="navbar-brand fw-bold" href="/">
+            <i class="bi bi-whatsapp text-success"></i> WhatsApp SaaS
+        </a>
     </div>
 </div>
 
@@ -9,22 +11,78 @@
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                <i class="bi bi-speedometer2 me-2"></i> Dashboard
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            <NavLink class="nav-link" href="/inbox">
+                <i class="bi bi-chat-dots me-2"></i> Inbox
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            <NavLink class="nav-link" href="/contacts">
+                <i class="bi bi-people me-2"></i> Contatos
             </NavLink>
         </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/chatbot">
+                <i class="bi bi-robot me-2"></i> Chatbot
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/quick-responses">
+                <i class="bi bi-lightning me-2"></i> Respostas Rápidas
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/tags">
+                <i class="bi bi-tags me-2"></i> Etiquetas
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/appointments">
+                <i class="bi bi-calendar-check me-2"></i> Agendamentos
+            </NavLink>
+        </div>
+
+        <AuthorizeView Roles="Admin">
+            <hr class="mx-3 my-2" />
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/admin">
+                    <i class="bi bi-gear me-2"></i> Administração
+                </NavLink>
+            </div>
+        </AuthorizeView>
+
+        <hr class="mx-3 my-2" />
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <span class="nav-link text-muted small">
+                        <i class="bi bi-person-circle me-1"></i> @context.User.Identity?.Name
+                    </span>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/logout">
+                        <i class="bi bi-box-arrow-right me-2"></i> Sair
+                    </NavLink>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/login">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Login
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
     </nav>
 </div>
 
