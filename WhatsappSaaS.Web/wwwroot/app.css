@@ -1,19 +1,10 @@
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    height: 100%;
 }
 
 a, .btn-link {
     color: #006bb7;
-}
-
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 .content {
@@ -49,3 +40,64 @@ h1:focus {
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
+
+/* SaaS Dashboard Styles */
+.sidebar {
+    background-color: #1a1d23;
+}
+
+.top-row.navbar {
+    background-color: #1a1d23 !important;
+    border-bottom: 1px solid #2d3139;
+}
+
+.nav-item .nav-link {
+    color: rgba(255,255,255,0.75);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: background-color 0.15s;
+}
+
+.nav-item .nav-link:hover,
+.nav-item .nav-link.active {
+    color: #fff;
+    background-color: rgba(255,255,255,0.1);
+}
+
+.nav-item .nav-link.active {
+    color: #25d366;
+    background-color: rgba(37, 211, 102, 0.1);
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Card hover effect */
+.card {
+    transition: box-shadow 0.15s;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+
+/* Message bubbles */
+.message-bubble {
+    border-radius: 18px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
