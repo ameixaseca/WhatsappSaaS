@@ -60,7 +60,7 @@ public static class DbSeeder
                 Id = Guid.Parse("00000000-0000-0000-0000-000000000020"),
                 Name = "Admin",
                 Email = "admin@demo.com",
-                PasswordHash = "admin123",
+                PasswordHash = "admin123", // NOTE: MVP only - production should use BCrypt/PBKDF2 hashing
                 Role = UserRole.Admin,
                 CompanyId = demoCompanyId
             };
@@ -69,7 +69,7 @@ public static class DbSeeder
                 Id = Guid.Parse("00000000-0000-0000-0000-000000000021"),
                 Name = "Atendente Demo",
                 Email = "atendente@demo.com",
-                PasswordHash = "atend123",
+                PasswordHash = "atend123", // NOTE: MVP only - production should use BCrypt/PBKDF2 hashing
                 Role = UserRole.Attendant,
                 CompanyId = demoCompanyId
             };

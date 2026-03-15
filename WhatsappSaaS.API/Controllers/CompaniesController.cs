@@ -150,7 +150,7 @@ public class CompaniesController : ControllerBase
         {
             Name = request.Name,
             Email = request.Email,
-            PasswordHash = request.Password, // Simplified for MVP
+            PasswordHash = request.Password, // NOTE: MVP only - production should use BCrypt/PBKDF2 hashing
             Role = role,
             CompanyId = id
         };
